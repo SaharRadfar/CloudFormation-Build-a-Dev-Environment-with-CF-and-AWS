@@ -24,7 +24,7 @@ Resources:
       EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: Task1_VPC
+          Value: Dev_VPC
 
 #####################IGW#####################
   InternetGateway:
@@ -32,7 +32,7 @@ Resources:
     Properties:
       Tags:
         - Key: Name
-          Value: Task1_IGW
+          Value: Dev_IGW
 
   VPCtoIGWConnection:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -54,7 +54,7 @@ Resources:
       SubnetId: !Ref PublicSubnetAz0
       Tags:
         - Key: Name
-          Value: Task1_NATGW
+          Value: Dev_NATGW
 
 #####################Subnets#####################
   PublicSubnetAz0:
@@ -194,7 +194,7 @@ Resources:
         CidrIp: 0.0.0.0/0 
       Tags: 
         - Key: Name
-          Value: Task1-LoadBalancer SG
+          Value: Dev-LoadBalancer SG
 
   NginxSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -215,7 +215,7 @@ Resources:
         Ref: VPC
       Tags:
         - Key: Name
-          Value: Task1-NACL      
+          Value: Dev-NACL      
 
   ACLAssociationSubnetPersistence1:
     Type: AWS::EC2::SubnetNetworkAclAssociation
@@ -241,7 +241,7 @@ Resources:
       - InternetGateway
       - VPCtoIGWConnection
     Properties:
-      Name: Task1ApplicationLoadBalancer
+      Name: DevApplicationLoadBalancer
       Subnets: 
         - !Ref PublicSubnetAz0
         - !Ref PublicSubnetAz1
@@ -249,7 +249,7 @@ Resources:
         - !Ref LoadBalancerSecurityGroup
       Tags: 
         - Key: Name
-          Value: Task1-ALB
+          Value: Dev-ALB
           
   HTTPListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -260,12 +260,12 @@ Resources:
     Properties:
       DefaultActions:
         - Type: forward
-          TargetGroupArn: !Ref Task1TargetGroup
+          TargetGroupArn: !Ref DevTargetGroup
       LoadBalancerArn: !Ref ApplicationLoadBalancer
       Port: 80
       Protocol: HTTP
 
-  Task1TargetGroup:
+  DevTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 10
@@ -282,7 +282,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: Task1-TargetGroup
+          Value: Dev-TargetGroup
 
 #####################AutoScalingGroup#####################
   NginxAutoScaleGroup:
@@ -292,7 +292,7 @@ Resources:
       MinSize: '2'
       MaxSize: '4'
       TargetGroupARNs:
-        - !Ref Task1TargetGroup
+        - !Ref DevTargetGroup
       VPCZoneIdentifier:
       - Ref: PublicSubnetAz0
       - Ref: PublicSubnetAz1
@@ -412,3 +412,9 @@ Resources:
               nginx:
                 enabled: true
                 ensureRunning: true
+
+Outputs:
+  ApplicationLoadBalancerDNSName:
+    Description: The DNSName of the Application Load Balancer
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Condition: CreateProdResources
